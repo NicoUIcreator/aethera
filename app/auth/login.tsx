@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Mail, Lock, ArrowRight } from 'lucide-react-native';
+import { Mail, Lock, ArrowRight, LogIn } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const { isDark } = useTheme();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleLogin() {
     if (!email || !password) {
@@ -30,6 +31,20 @@ export default function LoginScreen() {
       setError('Credenciales inválidas');
     } finally {
       setLoading(false);
+    }
+  }
+  
+  async function handleGoogleLogin() {
+    setGoogleLoading(true);
+    setError('');
+    
+    try {
+      await signInWithGoogle();
+      // La redirección se maneja en el AuthContext después de una autenticación exitosa
+    } catch (err) {
+      setError('Error al iniciar sesión con Google');
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -110,6 +125,27 @@ export default function LoginScreen() {
           {!loading && <ArrowRight size={20} color="#fff" />}
         </TouchableOpacity>
 
+        <View style={styles.dividerContainer}>
+          <View style={[styles.divider, { backgroundColor: isDark ? '#333' : '#ddd' }]} />
+          <Text style={[styles.dividerText, { color: isDark ? '#ccc' : '#666' }]}>O</Text>
+          <View style={[styles.divider, { backgroundColor: isDark ? '#333' : '#ddd' }]} />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.googleButton, { opacity: googleLoading ? 0.7 : 1 }]}
+          onPress={handleGoogleLogin}
+          disabled={googleLoading}
+        >
+          {googleLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <LogIn size={20} color="#fff" />
+              <Text style={styles.googleButtonText}>Continuar con Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={() => router.push('/auth/register')}>
           <Text style={[styles.registerText, { color: isDark ? '#fff' : '#000' }]}>
             ¿No tienes una cuenta? Regístrate
@@ -177,6 +213,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
     marginRight: 8,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+  },
+  googleButton: {
+    backgroundColor: '#4285F4',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleButtonText: {
+    color: '#fff',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    marginLeft: 8,
   },
   registerText: {
     fontFamily: 'Inter-Regular',
